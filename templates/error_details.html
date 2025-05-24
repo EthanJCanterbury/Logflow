@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Details - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">LogFlow</span>
+                    </a>
+                </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('new_project') }}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Project</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Current Project</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_details', project_id=project.id) }}">
+                            <i class="fas fa-stream"></i>
+                            <span>Logs</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="{{ url_for('project_errors', project_id=project.id) }}">
+                            <i class="fas fa-bug"></i>
+                            <span>Errors</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-cog"></i>
+                            <span>Project Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Account</span>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>Error Details</h1>
+                    <p>{{ project.name }}</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('project_errors', project_id=project.id) }}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Back to Errors
+                    </a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="content-card">
+                <div class="error-header">
+                    <div class="error-status">
+                        {% if error.resolved %}
+                            <span class="status-badge resolved">
+                                <i class="fas fa-check-circle"></i> Resolved
+                            </span>
+                        {% else %}
+                            <span class="status-badge unresolved">
+                                <i class="fas fa-exclamation-circle"></i> Unresolved
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="error-actions">
+                        {% if not error.resolved %}
+                            <form method="POST" action="{{ url_for('resolve_error', project_id=project.id, error_id=error.id) }}" class="inline-form">
+                                <button type="submit" class="btn btn-primary">
+                                    Mark as Resolved
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="error-detail-section">
+                    <h3 class="section-title">Error Information</h3>
+                    <div class="error-info">
+                        <div>
+                            <h4>Error ID</h4>
+                            <div class="error-id">{{ error.error_id }}</div>
+                        </div>
+                        <div>
+                            <h4>Status</h4>
+                            <div>
+                                {% if error.resolved %}
+                                    <span class="status-badge resolved">
+                                        <i class="fas fa-check-circle"></i> Resolved
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge unresolved">
+                                        <i class="fas fa-exclamation-circle"></i> Unresolved
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <h4>Timestamp</h4>
+                            <div>{{ error.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                        </div>
+                        <div>
+                            <h4>Type</h4>
+                            <div>{{ error.type or 'Unknown Error' }}</div>
+                        </div>
+                        {% if error.source %}
+                            <div>
+                                <h4>Source</h4>
+                                <div>{{ error.source }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="error-detail-section">
+                    <h3 class="section-title">Error Message</h3>
+                    <div class="error-message-full">
+                        {{ error.message }}
+                    </div>
+                </div>
+
+                {% if error.stack_trace %}
+                    <div class="error-detail-section">
+                        <h3 class="section-title">Stack Trace</h3>
+                        <pre class="stack-trace">{{ error.stack_trace }}</pre>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata %}
+                    <div class="error-detail-section">
+                        <h3 class="section-title">Metadata</h3>
+                        <pre class="error-metadata">{{ error.metadata }}</pre>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Related Logs</h3>
+                </div>
+
+                <div class="related-logs">
+                    <!-- This would be populated with logs from around the time of the error -->
+                    <div class="empty-state small">
+                        <p>No related logs found for this error.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

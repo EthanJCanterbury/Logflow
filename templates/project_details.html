@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">LogFlow</span>
+                    </a>
+                </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('new_project') }}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Project</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Current Project</span>
+                    </li>
+                    <li class="active">
+                        <a href="{{ url_for('project_details', project_id=project.id) }}">
+                            <i class="fas fa-stream"></i>
+                            <span>Logs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_errors', project_id=project.id) }}">
+                            <i class="fas fa-bug"></i>
+                            <span>Errors</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_settings', project_id=project.id) }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Project Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Account</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('account_settings') }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>{{ project.name }}</h1>
+                    <p>{{ project.description or 'No description provided' }}</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="project-tabs">
+                <a href="{{ url_for('project_details', project_id=project.id) }}" class="tab active">Logs</a>
+                <a href="{{ url_for('project_errors', project_id=project.id) }}" class="tab">Errors ({{ unresolved_errors }} unresolved)</a>
+                <a href="{{ url_for('project_settings', project_id=project.id) }}" class="tab">Settings</a>
+            </div>
+
+            <div class="content-card api-info">
+                <div class="api-info-header">
+                    <h3>API Information</h3>
+                </div>
+                <div class="api-info-content">
+                    <div class="api-key-section">
+                        <div class="api-key-label">API Key:</div>
+                        <div class="api-key-value">
+                            <code id="api-key">{{ project.api_key }}</code>
+                            <button class="btn btn-icon" id="copy-api-key" title="Copy API Key">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="api-endpoints">
+                        <div class="endpoint">
+                            <div class="endpoint-title">Log Endpoint</div>
+                            <div class="endpoint-url">
+                                <code>POST https://logflow.lol/api/logs</code>
+                            </div>
+                        </div>
+                        <div class="endpoint">
+                            <div class="endpoint-title">Error Endpoint</div>
+                            <div class="endpoint-url">
+                                <code>POST https://logflow.lol/api/errors</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="api-help">
+                        <button class="btn btn-sm btn-primary" id="show-example-modal">
+                            <i class="fas fa-code"></i> See Example
+                        </button>
+                        <a href="{{ url_for('documentation') }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-book"></i> API Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Logs</h3>
+                    <div class="card-actions">
+                        <div class="filter-group">
+                            <select class="filter-select" id="level-filter">
+                                <option value="">All Levels</option>
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                            <input type="text" class="filter-input" id="search-filter" placeholder="Search logs...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="logs-container">
+                    {% if logs.items %}
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Level</th>
+                                    <th>Message</th>
+                                    <th>Source</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs.items %}
+                                    <tr class="log-row" data-level="{{ log.level }}">
+                                        <td class="log-timestamp">
+                                            {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                        </td>
+                                        <td>
+                                            <span class="log-level log-level-{{ log.level.lower() }}">{{ log.level }}</span>
+                                        </td>
+                                        <td class="log-message">
+                                            {{ log.message }}
+                                        </td>
+                                        <td class="log-source">
+                                            {{ log.source or 'N/A' }}
+                                        </td>
+                                        <td class="log-actions">
+                                            <button class="btn btn-icon btn-sm log-details-btn" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="log-details-row" style="display: none;">
+                                        <td colspan="5">
+                                            <div class="log-details">
+                                                <div class="log-details-section">
+                                                    <h4>Message</h4>
+                                                    <div class="log-message-full">{{ log.message }}</div>
+                                                </div>
+
+                                                {% if log.metadata %}
+                                                    <div class="log-details-section">
+                                                        <h4>Metadata</h4>
+                                                        <pre class="log-metadata">{{ log.metadata }}</pre>
+                                                    </div>
+                                                {% endif %}
+
+                                                <div class="log-details-section">
+                                                    <h4>Additional Information</h4>
+                                                    <table class="log-info-table">
+                                                        <tr>
+                                                            <th>Log ID</th>
+                                                            <td>{{ log.id }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Timestamp</th>
+                                                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Level</th>
+                                                            <td>{{ log.level }}</td>
+                                                        </tr>
+                                                        {% if log.source %}
+                                                            <tr>
+                                                                <th>Source</th>
+                                                                <td>{{ log.source }}</td>
+                                                            </tr>
+                                                        {% endif %}
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="pagination">
+                            {% if logs.has_prev %}
+                                <a href="{{ url_for('project_details', project_id=project.id, page=logs.prev_num) }}" class="pagination-item">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            {% else %}
+                                <span class="pagination-item disabled">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </span>
+                            {% endif %}
+
+                            <span class="pagination-info">
+                                Page {{ logs.page }} of {{ logs.pages }}
+                            </span>
+
+                            {% if logs.has_next %}
+                                <a href="{{ url_for('project_details', project_id=project.id, page=logs.next_num) }}" class="pagination-item">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-item disabled">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-stream"></i>
+                            </div>
+                            <h2>No logs yet</h2>
+                            <p>Start sending logs to your API endpoint to see them here.</p>
+                            <button class="btn btn-primary" id="show-example-modal">See Example</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="example-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>How to Send Logs</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="code-tabs">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="curl">cURL</button>
+                        <button class="tab-btn" data-tab="javascript">JavaScript</button>
+                        <button class="tab-btn" data-tab="python">Python</button>
+                    </div>
+
+                    <div class="tab-content active" id="curl">
+                        <pre><code>curl -X POST https://logflow.lol/api/logs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: {{ project.api_key }}" \
+  -d '{
+    "message": "User logged in",
+    "level": "INFO",
+    "source": "auth-service",
+    "metadata": {
+      "user_id": 123,
+      "role": "admin"
+    }
+  }'</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="javascript">
+                        <pre><code>// Simple fetch-based logging
+const API_KEY = '{{ project.api_key }}';
+const API_URL = 'https://logflow.lol/api/logs';
+
+// Log a message
+fetch(API_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': API_KEY
+  },
+  body: JSON.stringify({
+    message: 'User logged in',
+    level: 'INFO',
+    source: 'auth-service',
+    metadata: {
+      userId: 123,
+      role: 'admin'
+    }
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Log created:', data);
+})
+.catch(error => {
+  console.error('Error creating log:', error);
+});</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="python">
+                        <pre><code>import requests
+import json
+
+API_KEY = '{{ project.api_key }}'
+API_URL = 'https://logflow.lol/api/logs'
+
+# Log a message
+response = requests.post(
+    API_URL,
+    headers={
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+    },
+    json={
+        'message': 'User logged in',
+        'level': 'INFO',
+        'source': 'auth-service',
+        'metadata': {
+            'user_id': 123,
+            'role': 'admin'
+        }
+    }
+)
+
+print(f"Log status: {response.status_code}")</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="example-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>How to Send Logs</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="code-tabs">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="curl">cURL</button>
+                        <button class="tab-btn" data-tab="javascript">JavaScript</button>
+                        <button class="tab-btn" data-tab="python">Python</button>
+                    </div>
+
+                    <div class="tab-content active" id="curl">
+                        <pre><code>curl -X POST https://logflow.lol/api/logs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: {{ project.api_key }}" \
+  -d '{
+    "message": "User logged in",
+    "level": "INFO",
+    "source": "auth-service",
+    "metadata": {
+      "user_id": 123,
+      "role": "admin"
+    }
+  }'</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="javascript">
+                        <pre><code>// Simple fetch-based logging
+const API_KEY = '{{ project.api_key }}';
+const API_URL = 'https://logflow.lol/api/logs';
+
+// Log a message
+fetch(API_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': API_KEY
+  },
+  body: JSON.stringify({
+    message: 'User logged in',
+    level: 'INFO',
+    source: 'auth-service',
+    metadata: {
+      userId: 123,
+      role: 'admin'
+    }
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Log created:', data);
+})
+.catch(error => {
+  console.error('Error creating log:', error);
+});</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="python">
+                        <pre><code>import requests
+import json
+
+API_KEY = '{{ project.api_key }}'
+API_URL = 'https://logflow.lol/api/logs'
+
+# Log a message
+response = requests.post(
+    API_URL,
+    headers={
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+    },
+    json={
+        'message': 'User logged in',
+        'level': 'INFO',
+        'source': 'auth-service',
+        'metadata': {
+            'user_id': 123,
+            'role': 'admin'
+        }
+    }
+)
+
+print(f"Log status: {response.status_code}")</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Show the example modal when the button is clicked
+        document.getElementById('show-example-modal').addEventListener('click', function() {
+            document.getElementById('example-modal').style.display = 'flex';
+        });
+
+        // Close the modal when the close button is clicked
+        document.querySelector('.modal-close').addEventListener('click', function() {
+            document.getElementById('example-modal').style.display = 'none';
+        });
+
+        // Close the modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('example-modal')) {
+                document.getElementById('example-modal').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

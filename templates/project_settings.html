@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} Settings - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">LogFlow</span>
+                    </a>
+                </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('new_project') }}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Project</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Current Project</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_details', project_id=project.id) }}">
+                            <i class="fas fa-stream"></i>
+                            <span>Logs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_errors', project_id=project.id) }}">
+                            <i class="fas fa-bug"></i>
+                            <span>Errors</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="{{ url_for('project_settings', project_id=project.id) }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Project Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Account</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('account_settings') }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>{{ project.name }} Settings</h1>
+                    <p>Manage your project configuration</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('project_details', project_id=project.id) }}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Back to Project
+                    </a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="project-tabs">
+                <a href="{{ url_for('project_details', project_id=project.id) }}" class="tab">Logs</a>
+                <a href="{{ url_for('project_errors', project_id=project.id) }}" class="tab">Errors</a>
+                <a href="{{ url_for('project_settings', project_id=project.id) }}" class="tab active">Settings</a>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Project Information</h3>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('project_settings', project_id=project.id) }}" method="POST" class="settings-form">
+                        <div class="form-group">
+                            <label for="name">Project Name</label>
+                            <input type="text" id="name" name="name" value="{{ project.name }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="4">{{ project.description or '' }}</textarea>
+                        </div>
+
+                         <div class="form-group">
+                            <label>Storage Usage</label>
+                            <div>Current usage: TBD / 500MB</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="api_key">API Key</label>
+                            <div class="api-key-display">
+                                <input type="text" id="api_key" value="{{ project.api_key }}" readonly>
+                                <button type="button" class="btn btn-icon" id="copy-api-key" title="Copy API Key">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <p class="field-help">This key is used to authenticate API requests from your application.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Created At</label>
+                            <div>{{ project.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="content-card danger-zone">
+                <div class="card-header">
+                    <h3>Danger Zone</h3>
+                </div>
+                <div class="card-body">
+                    <div class="danger-action">
+                        <div class="danger-info">
+                            <h4>Regenerate API Key</h4>
+                            <p>This will invalidate your current API key and generate a new one. All applications using the old key will need to be updated.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger" id="regenerate-key-btn">Regenerate Key</button>
+                    </div>
+
+                    <div class="danger-action">
+                        <div class="danger-info">
+                            <h4>Delete Project</h4>
+                            <p>This will permanently delete this project and all associated logs and errors. This action cannot be undone.</p>
+                        </div>
+                        <button type="button" class="btn btn-danger" id="delete-project-btn">Delete Project</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Delete Project Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Delete Project</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this project? This will permanently remove all data and cannot be undone.</p>
+                <p>To confirm, type <strong>{{ project.name }}</strong> below:</p>
+                <input type="text" id="delete-confirm-input" placeholder="Type project name to confirm">
+                <div class="modal-actions">
+                    <button class="btn btn-outline" id="delete-cancel">Cancel</button>
+                    <button class="btn btn-danger" id="delete-confirm" disabled>Delete Project</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regenerate Key Confirmation Modal -->
+    <div class="modal" id="regenerate-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Regenerate API Key</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to regenerate your API key? All applications using the current key will need to be updated.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" id="regenerate-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="regenerate-confirm">Regenerate Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Copy API Key functionality
+        document.getElementById('copy-api-key').addEventListener('click', function() {
+            const apiKey = "{{ project.api_key }}";
+            navigator.clipboard.writeText(apiKey).then(function() {
+                alert('API key copied to clipboard');
+            });
+        });
+
+        // Delete project modal
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteBtn = document.getElementById('delete-project-btn');
+        const deleteConfirmInput = document.getElementById('delete-confirm-input');
+        const deleteConfirmBtn = document.getElementById('delete-confirm');
+        const deleteCloseBtn = document.querySelector('#delete-modal .modal-close');
+        const deleteCancelBtn = document.getElementById('delete-cancel');
+
+        deleteBtn.addEventListener('click', function() {
+            deleteModal.classList.add('show');
+        });
+
+        deleteCloseBtn.addEventListener('click', function() {
+            deleteModal.classList.remove('show');
+        });
+
+        deleteCancelBtn.addEventListener('click', function() {
+            deleteModal.classList.remove('show');
+        });
+
+        deleteConfirmInput.addEventListener('input', function() {
+            deleteConfirmBtn.disabled = this.value !== "{{ project.name }}";
+        });
+
+        // Regenerate key modal
+        const regenerateModal = document.getElementById('regenerate-modal');
+        const regenerateBtn = document.getElementById('regenerate-key-btn');
+        const regenerateCloseBtn = document.querySelector('#regenerate-modal .modal-close');
+        const regenerateCancelBtn = document.getElementById('regenerate-cancel');
+
+        regenerateBtn.addEventListener('click', function() {
+            regenerateModal.classList.add('show');
+        });
+
+        regenerateCloseBtn.addEventListener('click', function() {
+            regenerateModal.classList.remove('show');
+        });
+
+        regenerateCancelBtn.addEventListener('click', function() {
+            regenerateModal.classList.remove('show');
+        });
+    </script>
+</body>
+</html>

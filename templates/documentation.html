@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">LogFlow</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="/#features">Features</a>
+                <a href="/#community">Community</a>
+                <a href="/documentation" class="active">Documentation</a>
+                <a href="https://github.com/yourusername/logflow" target="_blank">GitHub</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container section-padding">
+        <div class="content-card">
+            <div class="card-header">
+                <h2>LogFlow API Documentation</h2>
+            </div>
+            <div class="card-body documentation">
+                <div class="doc-section">
+                    <h3>Authentication</h3>
+                    <p>All API requests require authentication using your project's API key. Include the API key in the header of your request as follows:</p>
+                    <pre><code>X-API-Key: your-project-api-key</code></pre>
+                </div>
+
+                <div class="doc-section">
+                    <h3>Logging Endpoints</h3>
+                    
+                    <div class="endpoint-doc">
+                        <h4>Log a Single Message</h4>
+                        <p><code>POST /api/logs</code></p>
+                        <div class="method-description">
+                            <p>Records a single log message in your project.</p>
+                            <h5>Request Body:</h5>
+                            <pre><code>{
+  "message": "User logged in",
+  "level": "INFO",  // Optional: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
+  "source": "auth-service",  // Optional: name of the service or component
+  "metadata": {  // Optional: arbitrary metadata
+    "user_id": 123,
+    "role": "admin"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-doc">
+                        <h4>Log Multiple Messages (Bulk)</h4>
+                        <p><code>POST /api/logs/bulk</code></p>
+                        <div class="method-description">
+                            <p>Records multiple log messages in a single request.</p>
+                            <h5>Request Body:</h5>
+                            <pre><code>[
+  {
+    "message": "User login attempt",
+    "level": "INFO",
+    "source": "auth-service",
+    "metadata": {
+      "user_id": 123
+    }
+  },
+  {
+    "message": "Payment processed",
+    "level": "INFO",
+    "source": "payment-service",
+    "metadata": {
+      "amount": 99.99,
+      "currency": "USD"
+    }
+  }
+]</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h3>Error Tracking Endpoints</h3>
+                    
+                    <div class="endpoint-doc">
+                        <h4>Track a Single Error</h4>
+                        <p><code>POST /api/errors</code></p>
+                        <div class="method-description">
+                            <p>Records a single error in your project.</p>
+                            <h5>Request Body:</h5>
+                            <pre><code>{
+  "message": "Failed to process payment",
+  "type": "PaymentError",  // Optional: error type/class
+  "stack_trace": "Error: Failed to process payment\n    at processPayment (/app/payment.js:42:7)",
+  "source": "payment-service",  // Optional: name of the service or component
+  "metadata": {  // Optional: arbitrary metadata
+    "order_id": "ORD-12345",
+    "amount": 99.99
+  }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-doc">
+                        <h4>Track Multiple Errors (Bulk)</h4>
+                        <p><code>POST /api/errors/bulk</code></p>
+                        <div class="method-description">
+                            <p>Records multiple errors in a single request.</p>
+                            <h5>Request Body:</h5>
+                            <pre><code>[
+  {
+    "message": "Database connection failed",
+    "type": "ConnectionError",
+    "stack_trace": "Error: Connection failed\n    at connectDB (/app/db.js:15:7)",
+    "source": "database-service",
+    "metadata": {
+      "host": "db.example.com",
+      "port": 5432
+    }
+  },
+  {
+    "message": "Authentication failed",
+    "type": "AuthError",
+    "stack_trace": "Error: Invalid credentials\n    at authenticate (/app/auth.js:22:5)",
+    "source": "auth-service",
+    "metadata": {
+      "attempt": 3,
+      "ip": "192.168.1.1"
+    }
+  }
+]</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h3>Code Examples</h3>
+                    
+                    <div class="code-tabs">
+                        <div class="tabs">
+                            <button class="tab-btn active" data-tab="python">Python</button>
+                            <button class="tab-btn" data-tab="javascript">JavaScript</button>
+                            <button class="tab-btn" data-tab="curl">cURL</button>
+                        </div>
+                        
+                        <div class="tab-content active" id="python">
+                            <pre><code>import requests
+import json
+
+API_KEY = 'your-project-api-key'
+API_URL = 'https://logflow.lol/api'
+
+# Log a single message
+response = requests.post(
+    f"{API_URL}/logs",
+    headers={
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+    },
+    json={
+        'message': 'User logged in',
+        'level': 'INFO',
+        'metadata': {
+            'user_id': 123, 
+            'role': 'admin'
+        }
+    }
+)
+print(f"Log status: {response.status_code}")
+
+# Bulk log messages
+bulk_logs = [
+    {
+        'message': 'User login attempt',
+        'level': 'INFO',
+        'source': 'auth-service',
+        'metadata': { 'user_id': 123 }
+    },
+    {
+        'message': 'Payment processed',
+        'level': 'INFO',
+        'source': 'payment-service',
+        'metadata': { 'amount': 99.99 }
+    }
+]
+
+bulk_response = requests.post(
+    f"{API_URL}/logs/bulk",
+    headers={
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+    },
+    json=bulk_logs
+)
+print(f"Bulk log status: {bulk_response.status_code}")</code></pre>
+                        </div>
+                        
+                        <div class="tab-content" id="javascript">
+                            <pre><code>// Single error tracking
+const trackError = async (error) => {
+  const API_KEY = 'your-project-api-key';
+  const API_URL = 'https://logflow.lol/api/errors';
+  
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify({
+        message: error.message,
+        type: error.name,
+        stack_trace: error.stack,
+        metadata: {
+          page: window.location.href,
+          browser: navigator.userAgent
+        }
+      })
+    });
+    
+    const data = await response.json();
+    console.log('Error tracked:', data.error_id);
+    return data.error_id;
+  } catch (e) {
+    console.error('Failed to track error:', e);
+  }
+};
+
+// Bulk error tracking
+const trackMultipleErrors = async (errors) => {
+  const API_KEY = 'your-project-api-key';
+  const API_URL = 'https://logflow.lol/api/errors/bulk';
+  
+  try {
+    const formattedErrors = errors.map(error => ({
+      message: error.message,
+      type: error.name,
+      stack_trace: error.stack,
+      metadata: error.metadata || {}
+    }));
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify(formattedErrors)
+    });
+    
+    const data = await response.json();
+    console.log('Errors tracked:', data.message);
+    return data;
+  } catch (e) {
+    console.error('Failed to track errors:', e);
+  }
+};</code></pre>
+                        </div>
+                        
+                        <div class="tab-content" id="curl">
+                            <pre><code># Log a message
+curl -X POST https://logflow.lol/api/logs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-project-api-key" \
+  -d '{
+    "message": "User logged in",
+    "level": "INFO",
+    "metadata": {
+      "user_id": 123,
+      "role": "admin"
+    }
+  }'
+
+# Log multiple messages (bulk)
+curl -X POST https://logflow.lol/api/logs/bulk \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-project-api-key" \
+  -d '[
+    {
+      "message": "User login attempt",
+      "level": "INFO",
+      "source": "auth-service",
+      "metadata": {
+        "user_id": 123
+      }
+    },
+    {
+      "message": "Payment processed",
+      "level": "INFO",
+      "source": "payment-service",
+      "metadata": {
+        "amount": 99.99,
+        "currency": "USD"
+      }
+    }
+  ]'</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="doc-section">
+                    <h3>Response Status Codes</h3>
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>200 OK</td>
+                                <td>The request was successful.</td>
+                            </tr>
+                            <tr>
+                                <td>201 Created</td>
+                                <td>The resource was created successfully.</td>
+                            </tr>
+                            <tr>
+                                <td>400 Bad Request</td>
+                                <td>The request was invalid or missing required fields.</td>
+                            </tr>
+                            <tr>
+                                <td>401 Unauthorized</td>
+                                <td>The API key is missing or invalid.</td>
+                            </tr>
+                            <tr>
+                                <td>429 Too Many Requests</td>
+                                <td>You've exceeded your rate limit.</td>
+                            </tr>
+                            <tr>
+                                <td>500 Internal Server Error</td>
+                                <td>Something went wrong on our end.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <span class="logo-text">LogFlow</span>
+                    </div>
+                    <p>Modern error tracking and log management for developers.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="/#features">Features</a></li>
+                        <li><a href="/#pricing">Pricing</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="#">Enterprise</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="/documentation">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Status</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/logflow">GitHub</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/issues">Issues</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/discussions">Discussions</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/blob/main/LICENSE">License</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>LogFlow - Open Source Error Tracking Tool - MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogFlow - Modern Error and Log Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">LogFlow</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#community">Community</a>
+                <a href="{{ url_for('documentation') }}">Documentation</a>
+                <a href="https://github.com/yourusername/logflow" target="_blank">GitHub</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Open Source Error Tracking</h1>
+                <p>Simple error tracking and log management for developers. Free, open source, and easy to use.</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-large">Get Started</a>
+                    <a href="https://github.com/yourusername/logflow" target="_blank" class="btn btn-outline btn-large">View on GitHub</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="{{ url_for('static', filename='img/dashboard-preview.png') }}" alt="LogFlow Dashboard">
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Powerful Features for Better Debugging</h2>
+                <p>Everything you need to track, manage and fix errors in your applications</p>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #ec3750;">
+                        <i class="fas fa-bug"></i>
+                    </div>
+                    <h3>Real-time Error Tracking</h3>
+                    <p>Capture and monitor errors as they happen with detailed stack traces and context.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #ff8c37;">
+                        <i class="fas fa-stream"></i>
+                    </div>
+                    <h3>Structured Logging</h3>
+                    <p>Collect and search through logs with powerful filtering and visualization tools.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #f1c40f;">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3>Intelligent Alerts</h3>
+                    <p>Get notified about critical issues through customizable alert channels.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #33d6a6;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Performance Metrics</h3>
+                    <p>Track application performance and correlate with errors and logs.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #338eda;">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>Simple Integration</h3>
+                    <p>Easy to integrate with any application using our lightweight SDKs or API.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background-color: #a633d6;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Team Collaboration</h3>
+                    <p>Work together to resolve issues with comments, assignments and status tracking.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="integration">
+        <div class="container">
+            <div class="section-header">
+                <h2>Quick Integration with Any Platform</h2>
+                <p>A few lines of code to start logging in any language</p>
+            </div>
+
+            <div class="code-tabs">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="python">Python</button>
+                    <button class="tab-btn" data-tab="curl">cURL</button>
+                </div>
+
+                <div class="tab-content active" id="python">
+                    <pre><code>
+import requests
+import json
+
+API_KEY = 'your-project-api-key'
+API_URL = 'https://logflow.lol/api/logs'
+
+# Log messages
+response = requests.post(
+    API_URL,
+    headers={
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+    },
+    json={
+        'message': 'User logged in',
+        'level': 'INFO',
+        'metadata': {
+            'user_id': 123, 
+            'role': 'admin'
+        }
+    }
+)
+print(f"Log status: {response.status_code}")
+
+# Log errors
+try:
+    # Your code that might raise an exception
+    raise ValueError("Something went wrong")
+except Exception as e:
+    error_response = requests.post(
+        'https://logflow.lol/api/errors',
+        headers={
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+        },
+        json={
+            'message': str(e),
+            'type': e.__class__.__name__,
+            'metadata': {
+                'occurred_at': 'login_process'
+            }
+        }
+    )
+    print(f"Error log status: {error_response.status_code}")
+                    </code></pre>
+                </div>
+
+                <div class="tab-content" id="curl">
+                    <pre><code>
+# Log a message
+curl -X POST https://logflow.lol/api/logs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-project-api-key" \
+  -d '{
+    "message": "User logged in",
+    "level": "INFO",
+    "metadata": {
+      "user_id": 123,
+      "role": "admin"
+    }
+  }'
+
+# Log an error
+curl -X POST https://logflow.lol/api/errors \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-project-api-key" \
+  -d '{
+    "message": "Failed to process payment",
+    "type": "PaymentError",
+    "stack_trace": "Error: Failed to process payment\n    at processPayment (/app/payment.js:42:7)\n    at checkout (/app/routes.js:15:12)",
+    "metadata": {
+      "order_id": "ORD-12345",
+      "amount": 99.99
+    }
+  }'
+                    </code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="community" class="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2>Open Source Project</h2>
+                <p>Free and community-driven</p>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card featured">
+                    <div class="pricing-header">
+                        <h3>Free Forever</h3>
+                        <div class="price">$0<span>/forever</span></div>
+                    </div>
+                    <div class="pricing-features">
+                        <ul>
+                            <li><i class="fas fa-check"></i> Unlimited logs</li>
+                            <li><i class="fas fa-check"></i> Unlimited errors</li>
+                            <li><i class="fas fa-check"></i> Multiple projects</li>
+                            <li><i class="fas fa-check"></i> Self-hosted data retention</li>
+                            <li><i class="fas fa-check"></i> Open source codebase</li>
+                            <li><i class="fas fa-check"></i> Community support</li>
+                            <li><i class="fas fa-check"></i> MIT License</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-block">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>See LogFlow in Action</h2>
+                <p>Take a quick tour of our intuitive dashboard</p>
+            </div>
+
+            <div class="demo-video">
+                <img src="{{ url_for('static', filename='img/dashboard-demo.png') }}" alt="LogFlow Dashboard Demo">
+                <div class="play-button">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Join our open source community</h2>
+                <p>Contribute, use, and help improve this free error tracking tool.</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-large">Create Account</a>
+                    <a href="https://github.com/yourusername/logflow" target="_blank" class="btn btn-outline btn-large">Contribute on GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <span class="logo-text">LogFlow</span>
+                    </div>
+                    <p>Modern error tracking and log management for developers.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="#">Enterprise</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#docs">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Status</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/logflow">GitHub</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/issues">Issues</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/discussions">Discussions</a></li>
+                        <li><a href="https://github.com/yourusername/logflow/blob/main/LICENSE">License</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>LogFlow - Open Source Error Tracking Tool - MIT License</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

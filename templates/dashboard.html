@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">LogFlow</span>
+                    </a>
+                </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active">
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('new_project') }}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Project</span>
+                        </a>
+                    </li>
+                    {% if projects_data %}
+                        <li class="nav-divider">
+                            <span>Your Projects</span>
+                        </li>
+                        {% for project_data in projects_data %}
+                            <li>
+                                <a href="{{ url_for('project_details', project_id=project_data.project.id) }}">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>{{ project_data.project.name }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% endif %}
+                    <li class="nav-divider">
+                        <span>Account</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('account_settings') }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>Dashboard</h1>
+                    <p>Welcome back, {{ user.username }}!</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('new_project') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Project
+                    </a>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if not projects_data %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h2>No projects yet</h2>
+                    <p>Create your first project to start tracking logs and errors.</p>
+                    <a href="{{ url_for('new_project') }}" class="btn btn-primary">Create Project</a>
+                </div>
+            {% else %}
+                <div class="dashboard-stats">
+                    <div class="stat-card" style="--stat-color: #ec3750;">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ projects_data|map(attribute='unresolved_errors')|sum }}</h3>
+                            <p>Unresolved Errors</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="--stat-color: #ff8c37;">
+                        <div class="stat-icon">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ projects_data|map(attribute='error_count')|sum }}</h3>
+                            <p>Total Errors</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="--stat-color: #33d6a6;">
+                        <div class="stat-icon">
+                            <i class="fas fa-stream"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ projects_data|map(attribute='log_count')|sum }}</h3>
+                            <p>Total Logs</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="--stat-color: #338eda;">
+                        <div class="stat-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ projects_data|length }}</h3>
+                            <p>Active Projects</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-projects">
+                    <div class="section-header">
+                        <h2>Your Projects</h2>
+                    </div>
+
+                    <div class="project-grid">
+                        {% for project_data in projects_data %}
+                            <div class="project-card">
+                                <div class="project-header">
+                                    <h3>{{ project_data.project.name }}</h3>
+                                    <div class="project-actions">
+                                        <a href="{{ url_for('project_details', project_id=project_data.project.id) }}" class="btn btn-sm btn-outline">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="project-stats">
+                                    <div class="project-stat">
+                                        <div class="stat-label">Logs</div>
+                                        <div class="stat-value">{{ project_data.log_count }}</div>
+                                    </div>
+
+                                    <div class="project-stat">
+                                        <div class="stat-label">Errors</div>
+                                        <div class="stat-value">{{ project_data.error_count }}</div>
+                                    </div>
+
+                                    <div class="project-stat">
+                                        <div class="stat-label">Unresolved</div>
+                                        <div class="stat-value">{{ project_data.unresolved_errors }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="project-activity">
+                                    <div class="activity-header">
+                                        <h4>Recent Activity</h4>
+                                    </div>
+
+                                    <div class="activity-list">
+                                        {% if project_data.recent_errors %}
+                                            {% for error in project_data.recent_errors[:2] %}
+                                                <div class="activity-item error">
+                                                    <div class="activity-icon">
+                                                        <i class="fas fa-bug"></i>
+                                                    </div>
+                                                    <div class="activity-content">
+                                                        <div class="activity-title">{{ error.message[:50] }}{% if error.message|length > 50 %}...{% endif %}</div>
+                                                        <div class="activity-meta">
+                                                            <span>{{ error.timestamp.strftime('%b %d, %H:%M') }}</span>
+                                                            <span>{{ error.type or 'Error' }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {% if project_data.recent_logs %}
+                                            {% for log in project_data.recent_logs[:2] %}
+                                                <div class="activity-item log">
+                                                    <div class="activity-icon">
+                                                        <i class="fas fa-stream"></i>
+                                                    </div>
+                                                    <div class="activity-content">
+                                                        <div class="activity-title">{{ log.message[:50] }}{% if log.message|length > 50 %}...{% endif %}</div>
+                                                        <div class="activity-meta">
+                                                            <span>{{ log.timestamp.strftime('%b %d, %H:%M') }}</span>
+                                                            <span>{{ log.level }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {% if not project_data.recent_errors and not project_data.recent_logs %}
+                                            <div class="empty-activity">
+                                                <p>No recent activity</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="project-footer">
+                                        <a href="{{ url_for('project_details', project_id=project_data.project.id) }}" class="btn btn-link">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

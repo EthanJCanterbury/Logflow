@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} - Errors - LogFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-text">LogFlow</span>
+                    </a>
+                </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('new_project') }}">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Project</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Current Project</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_details', project_id=project.id) }}">
+                            <i class="fas fa-stream"></i>
+                            <span>Logs</span>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="{{ url_for('project_errors', project_id=project.id) }}">
+                            <i class="fas fa-bug"></i>
+                            <span>Errors</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('project_settings', project_id=project.id) }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Project Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-divider">
+                        <span>Account</span>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('account_settings') }}">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>{{ project.name }}</h1>
+                    <p>{{ project.description or 'No description provided' }}</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+                <!-- Header buttons removed -->
+            </header>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="project-tabs">
+                <a href="{{ url_for('project_details', project_id=project.id) }}" class="tab">Logs</a>
+                <a href="{{ url_for('project_errors', project_id=project.id) }}" class="tab active">Errors</a>
+                <a href="{{ url_for('project_settings', project_id=project.id) }}" class="tab">Settings</a>
+            </div>
+
+            <div class="content-card api-info">
+                <div class="api-info-header">
+                    <h3>API Information</h3>
+                </div>
+                <div class="api-info-content">
+                    <div class="api-key-section">
+                        <div class="api-key-label">API Key:</div>
+                        <div class="api-key-value">
+                            <code id="api-key">{{ project.api_key }}</code>
+                            <button class="btn btn-icon" id="copy-api-key" title="Copy API Key">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="api-endpoints">
+                        <div class="endpoint">
+                            <div class="endpoint-title">Error Endpoint</div>
+                            <div class="endpoint-url">
+                                <code>POST https://logflow.lol/api/errors</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="api-help">
+                        <button class="btn btn-sm btn-primary" id="show-example-modal">
+                            <i class="fas fa-code"></i> See Example
+                        </button>
+                        <a href="{{ url_for('documentation') }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-book"></i> API Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Errors</h3>
+                    <div class="card-actions">
+                        <div class="filter-group">
+                            <select class="filter-select" id="status-filter">
+                                <option value="">All Errors</option>
+                                <option value="unresolved" {% if request.args.get('resolved') == 'false' %}selected{% endif %}>Unresolved</option>
+                                <option value="resolved" {% if request.args.get('resolved') == 'true' %}selected{% endif %}>Resolved</option>
+                            </select>
+                            <select class="filter-select" id="type-filter">
+                                <option value="">All Types</option>
+                                <!-- Types will be populated via JavaScript -->
+                            </select>
+                            <input type="text" class="filter-input" id="search-filter" placeholder="Search errors...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="errors-container">
+                    {% if errors.items %}
+                        <div class="errors-list">
+                            {% for error in errors.items %}
+                                <div class="error-card {% if not error.resolved %}unresolved{% endif %}">
+                                    <div class="error-header">
+                                        <div class="error-status">
+                                            {% if error.resolved %}
+                                                <span class="status-badge resolved">
+                                                    <i class="fas fa-check-circle"></i> Resolved
+                                                </span>
+                                            {% else %}
+                                                <span class="status-badge unresolved">
+                                                    <i class="fas fa-exclamation-circle"></i> Unresolved
+                                                </span>
+                                            {% endif %}
+                                            <span class="error-id-badge">ID: {{ error.error_id }}</span>
+                                        </div>
+                                        <div class="error-timestamp">
+                                            {{ error.timestamp.strftime('%b %d, %Y %H:%M:%S') }}
+                                        </div>
+                                    </div>
+
+                                    <div class="error-content">
+                                        <div class="error-type">
+                                            {{ error.type or 'Unknown Error' }}
+                                        </div>
+                                        <div class="error-message">
+                                            {{ error.message }}
+                                        </div>
+                                        {% if error.source %}
+                                            <div class="error-source">
+                                                <i class="fas fa-code"></i> {{ error.source }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="error-footer">
+                                        <a href="{{ url_for('error_details', project_id=project.id, error_id=error.id) }}" class="btn btn-sm btn-outline">
+                                            View Details
+                                        </a>
+
+                                        {% if not error.resolved %}
+                                            <form method="POST" action="{{ url_for('resolve_error', project_id=project.id, error_id=error.id) }}" class="inline-form">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    Mark as Resolved
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="pagination">
+                            {% if errors.has_prev %}
+                                <a href="{{ url_for('project_errors', project_id=project.id, page=errors.prev_num, resolved=request.args.get('resolved')) }}" class="pagination-item">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            {% else %}
+                                <span class="pagination-item disabled">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </span>
+                            {% endif %}
+
+                            <span class="pagination-info">
+                                Page {{ errors.page }} of {{ errors.pages }}
+                            </span>
+
+                            {% if errors.has_next %}
+                                <a href="{{ url_for('project_errors', project_id=project.id, page=errors.next_num, resolved=request.args.get('resolved')) }}" class="pagination-item">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-item disabled">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <h2>No errors found</h2>
+                            <p>No errors have been reported for this project yet.</p>
+                            <button class="btn btn-primary" id="show-example-modal">See Example</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="example-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>How to Send Errors</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="code-tabs">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="curl">cURL</button>
+                        <button class="tab-btn" data-tab="javascript">JavaScript</button>
+                        <button class="tab-btn" data-tab="python">Python</button>
+                    </div>
+
+                    <div class="tab-content active" id="curl">
+                        <pre><code>curl -X POST https://logflow.lol/api/errors \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: {{ project.api_key }}" \
+  -d '{
+    "message": "Failed to process payment",
+    "type": "PaymentError",
+    "stack_trace": "Error: Failed to process payment\n    at processPayment (/app/payment.js:42:7)\n    at checkout (/app/routes.js:15:12)",
+    "source": "payment-service",
+    "metadata": {
+      "order_id": "ORD-12345",
+      "amount": 99.99
+    }
+  }'
+
+# This will return a response with an error_id like:
+# {"message":"Error logged successfully","error_id":"ABCD1234","id":42}
+# You can tell users: "Please provide this error ID to support: ABCD1234"</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="javascript">
+                        <pre><code>// Simple fetch-based error logging
+const API_KEY = '{{ project.api_key }}';
+const API_URL = 'https://logflow.lol/api/errors';
+
+// Catch and log an error
+try {
+  // Your code that might throw
+  throw new Error('Failed to process payment');
+} catch (error) {
+  // Log the error to LogFlow
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_KEY
+    },
+    body: JSON.stringify({
+      message: error.message,
+      type: 'PaymentError',
+      stack_trace: error.stack,
+      source: 'payment-service',
+      metadata: {
+        orderId: 'ORD-12345',
+        amount: 99.99
+      }
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Display error ID to user
+    console.error(`An error occurred. Please provide this ID to support: ${data.error_id}`);
+    // You could show this in the UI:
+    // document.getElementById('error-message').textContent = 
+    //   `An error occurred. Please provide this ID to support: ${data.error_id}`;
+  })
+  .catch(fetchError => {
+    console.error("An error occurred but could not be logged.");
+  });
+}</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+
+                    <div class="tab-content" id="python">
+                        <pre><code>import requests
+import json
+
+API_KEY = '{{ project.api_key }}'
+API_URL = 'https://logflow.lol/api/errors'
+
+# Catch and log an error
+try:
+    # Your code that might raise an exception
+    raise ValueError('Failed to process payment')
+except Exception as e:
+    # Log the error to LogFlow
+    error_response = requests.post(
+        API_URL,
+        headers={
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+        },
+        json={
+            'message': str(e),
+            'type': e.__class__.__name__,
+            'source': 'payment-service',
+            'metadata': {
+                'order_id': 'ORD-12345',
+                'amount': 99.99
+            }
+        }
+    )
+
+    # Extract error ID for user-friendly messages
+    if error_response.status_code == 201:
+        error_data = error_response.json()
+        error_id = error_data.get('error_id')
+        print(f"An error occurred. Please provide this ID to support: {error_id}")
+    else:
+        print("An error occurred but could not be logged.")</code></pre>
+                        <button class="btn btn-sm btn-outline copy-code-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Filter errors based on status
+        document.getElementById('status-filter').addEventListener('change', function() {
+            const value = this.value;
+            let url = new URL(window.location);
+
+            if (value === 'unresolved') {
+                url.searchParams.set('resolved', 'false');
+            } else if (value === 'resolved') {
+                url.searchParams.set('resolved', 'true');
+            } else {
+                url.searchParams.delete('resolved');
+            }
+
+            window.location = url;
+        });
+    </script>
+</body>
+</html>
