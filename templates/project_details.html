@@ -51,6 +51,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url_for('project_uptime', project_id=project.id) }}">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>Uptime</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ url_for('project_settings', project_id=project.id) }}">
                             <i class="fas fa-cog"></i>
                             <span>Project Settings</span>
@@ -103,6 +109,7 @@
             <div class="project-tabs">
                 <a href="{{ url_for('project_details', project_id=project.id) }}" class="tab active">Logs</a>
                 <a href="{{ url_for('project_errors', project_id=project.id) }}" class="tab">Errors ({{ unresolved_errors }} unresolved)</a>
+                <a href="{{ url_for('project_uptime', project_id=project.id) }}" class="tab">Uptime</a>
                 <a href="{{ url_for('project_settings', project_id=project.id) }}" class="tab">Settings</a>
             </div>
 

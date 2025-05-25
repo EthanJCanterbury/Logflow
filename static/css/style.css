@@ -1054,6 +1054,74 @@ a:hover {
     margin-bottom: var(--spacing-md);
 }
 
+/* Uptime Monitoring Styles */
+.uptime-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+}
+
+.uptime-table th,
+.uptime-table td {
+    padding: var(--spacing-sm);
+    text-align: left;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.uptime-table th {
+    font-weight: 600;
+    color: var(--dark);
+    background-color: var(--light);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-up {
+    background-color: rgba(51, 214, 166, 0.2);
+    color: #33d6a6;
+}
+
+.status-down {
+    background-color: rgba(236, 55, 80, 0.2);
+    color: #ec3750;
+}
+
+.status-pending {
+    background-color: rgba(255, 140, 55, 0.2);
+    color: #ff8c37;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.uptime-name {
+    font-weight: 500;
+}
+
+.uptime-endpoint {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uptime-endpoint a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.uptime-endpoint a:hover {
+    text-decoration: underline;
+}
+
 .activity-item {
     display: flex;
     align-items: flex-start;

@@ -8,3 +8,4 @@ flask-limiter>=3.5.0
 gunicorn>=21.2.0
 flask-limiter
 flask_limiter
+requests>=2.31.0

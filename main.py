@@ -55,6 +55,7 @@ class Project(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     logs = db.relationship('Log', backref='project', lazy=True)
     errors = db.relationship('Error', backref='project', lazy=True)
+    uptimes = db.relationship('Uptime', backref='project', lazy=True)
     storage_size = db.Column(db.BigInteger, default=0)  # Storage size in bytes
     
     def __repr__(self):
@@ -96,6 +97,20 @@ class Error(db.Model):
     
     def __repr__(self):
         return f'<Error {self.error_id} {self.type}: {self.message[:30]}>'
+
+class Uptime(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    endpoint_url = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    check_interval = db.Column(db.Integer, default=5)  # minutes
+    last_checked = db.Column(db.DateTime, nullable=True)
+    last_status = db.Column(db.Boolean, default=False)
+    response_time = db.Column(db.Float, nullable=True)  # in milliseconds
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    
+    def __repr__(self):
+        return f'<Uptime {self.name}: {self.endpoint_url}>'
 
 # Authentication
 def login_required(f):
@@ -387,6 +402,74 @@ def project_settings(project_id):
     
     return render_template('project_settings.html', project=project)
 
+@app.route('/projects/<int:project_id>/uptime', methods=['GET'])
+@login_required
+def project_uptime(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    # Get uptime monitors with pagination
+    page = request.args.get('page', 1, type=int)
+    uptimes = Uptime.query.filter_by(project_id=project.id).paginate(page=page, per_page=10)
+    
+    return render_template('project_uptime.html', project=project, uptimes=uptimes)
+
+@app.route('/projects/<int:project_id>/uptime/new', methods=['GET', 'POST'])
+@login_required
+def new_uptime(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        endpoint_url = request.form.get('endpoint_url')
+        check_interval = request.form.get('check_interval', 5, type=int)
+        
+        if not name or not endpoint_url:
+            flash('Name and endpoint URL are required')
+            return redirect(url_for('new_uptime', project_id=project.id))
+        
+        # Create new uptime monitor
+        uptime = Uptime(
+            name=name,
+            endpoint_url=endpoint_url,
+            check_interval=check_interval,
+            project_id=project.id
+        )
+        
+        db.session.add(uptime)
+        db.session.commit()
+        
+        flash('Uptime monitor created successfully!')
+        return redirect(url_for('project_uptime', project_id=project.id))
+    
+    return render_template('new_uptime.html', project=project)
+
+@app.route('/projects/<int:project_id>/uptime/<int:uptime_id>/delete', methods=['POST'])
+@login_required
+def delete_uptime(project_id, uptime_id):
+    project = Project.query.get_or_404(project_id)
+    uptime = Uptime.query.get_or_404(uptime_id)
+    
+    # Ensure the user owns this project and the uptime belongs to the project
+    if project.user_id != session['user_id'] or uptime.project_id != project.id:
+        flash('You do not have access to this resource')
+        return redirect(url_for('dashboard'))
+    
+    db.session.delete(uptime)
+    db.session.commit()
+    
+    flash('Uptime monitor deleted successfully')
+    return redirect(url_for('project_uptime', project_id=project_id))
+
 # Routes - API
 @app.route('/api/logs', methods=['POST'])
 @api_key_required
@@ -610,6 +693,94 @@ def create_bulk_errors():
         'error_ids': error_ids
     }), 201
 
+# Uptime checker function
+def check_uptime():
+    """
+    Function to check all uptime monitors
+    This should be run periodically (e.g., by a scheduler)
+    """
+    import requests
+    from datetime import datetime, timedelta
+
+    with app.app_context():
+        # Get monitors that need to be checked (based on check_interval)
+        now = datetime.utcnow()
+        uptimes = Uptime.query.all()
+        
+        for uptime in uptimes:
+            # Check if it's time to check this monitor
+            if uptime.last_checked is None or \
+               now >= uptime.last_checked + timedelta(minutes=uptime.check_interval):
+                try:
+                    # Make request to endpoint and measure response time
+                    start_time = datetime.utcnow()
+                    response = requests.get(uptime.endpoint_url, timeout=10)
+                    end_time = datetime.utcnow()
+                    
+                    # Calculate response time in milliseconds
+                    response_time = (end_time - start_time).total_seconds() * 1000
+                    
+                    # Update monitor status
+                    uptime.last_checked = now
+                    uptime.last_status = response.status_code < 400
+                    uptime.response_time = response_time
+                    
+                    # Create a log entry for this check
+                    status_text = "UP" if uptime.last_status else "DOWN"
+                    log = Log(
+                        message=f"Uptime check: {uptime.name} is {status_text} (HTTP {response.status_code}, {response_time:.2f}ms)",
+                        level="INFO" if uptime.last_status else "ERROR",
+                        source="uptime-monitor",
+                        project_id=uptime.project_id
+                    )
+                    db.session.add(log)
+                    
+                    # If down, create an error
+                    if not uptime.last_status:
+                        error = Error(
+                            message=f"Endpoint {uptime.name} is DOWN",
+                            type="UptimeError",
+                            source="uptime-monitor",
+                            meta_data=json.dumps({
+                                "endpoint": uptime.endpoint_url,
+                                "status_code": response.status_code,
+                                "response_time": response_time
+                            }),
+                            project_id=uptime.project_id
+                        )
+                        db.session.add(error)
+                    
+                    db.session.commit()
+                except Exception as e:
+                    # Handle connection errors
+                    uptime.last_checked = now
+                    uptime.last_status = False
+                    uptime.response_time = None
+                    
+                    # Log the error
+                    log = Log(
+                        message=f"Uptime check failed: {uptime.name} - {str(e)}",
+                        level="ERROR",
+                        source="uptime-monitor",
+                        project_id=uptime.project_id
+                    )
+                    db.session.add(log)
+                    
+                    # Create an error
+                    error = Error(
+                        message=f"Failed to check endpoint {uptime.name}",
+                        type="UptimeConnectionError",
+                        source="uptime-monitor",
+                        meta_data=json.dumps({
+                            "endpoint": uptime.endpoint_url,
+                            "error": str(e)
+                        }),
+                        project_id=uptime.project_id
+                    )
+                    db.session.add(error)
+                    
+                    db.session.commit()
+
 # Initialize database
 with app.app_context():
     try:
@@ -629,6 +800,24 @@ with app.app_context():
             db.session.rollback()
     except Exception as e:
         print(f"Error with database initialization: {e}")
+
+# Setup background thread for uptime checks
+import threading
+import time
+
+def uptime_checker_thread():
+    """Background thread to periodically check uptime monitors"""
+    while True:
+        try:
+            check_uptime()
+        except Exception as e:
+            print(f"Error in uptime checker: {e}")
+        time.sleep(60)  # Check every minute
+
+# Start the uptime checker thread when in production
+if os.environ.get('FLASK_ENV') == 'production':
+    uptime_thread = threading.Thread(target=uptime_checker_thread, daemon=True)
+    uptime_thread.start()
 
 if __name__ == '__main__':
     # Use debug mode only in development
