@@ -14,8 +14,24 @@ from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///logflow.db')
+# Set database URL with proper SSL mode
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///logflow.db')
+if database_url.startswith('postgresql'):
+    # Add SSL parameters to PostgreSQL connection
+    if '?' not in database_url:
+        database_url += '?'
+    else:
+        database_url += '&'
+    database_url += 'sslmode=require&connect_timeout=10'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,  # Check connection before use
+    'pool_recycle': 300,    # Recycle connections every 5 minutes
+    'pool_timeout': 30,     # Connection timeout
+    'max_overflow': 10      # Allow 10 extra connections when pool is full
+}
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)
 
 # Security settings
@@ -180,17 +196,22 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
-        user = User.query.filter_by(email=email).first()
-        
-        if not user or not check_password_hash(user.password_hash, password):
-            flash('Invalid email or password')
+        try:
+            user = User.query.filter_by(email=email).first()
+            
+            if not user or not check_password_hash(user.password_hash, password):
+                flash('Invalid email or password')
+                return redirect(url_for('login'))
+            
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session.permanent = True  # Always keep users logged in
+            
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            app.logger.error(f"Database error during login: {str(e)}")
+            flash('A database error occurred. Please try again later.')
             return redirect(url_for('login'))
-        
-        session['user_id'] = user.id
-        session['username'] = user.username
-        session.permanent = True  # Always keep users logged in
-        
-        return redirect(url_for('dashboard'))
     
     return render_template('login.html')
 
