@@ -1105,6 +1105,9 @@ a:hover {
     background-color: rgba(51, 214, 166, 0.2);
     color: #33d6a6;
     padding: 0.35rem 0.9rem;
+    display: inline-block;
+    min-width: 48px;
+    font-weight: 500;
 }
 
 .status-down {

@@ -104,6 +104,7 @@
             <div class="project-tabs">
                 <a href="{{ url_for('project_details', project_id=project.id) }}" class="tab">Logs</a>
                 <a href="{{ url_for('project_errors', project_id=project.id) }}" class="tab active">Errors</a>
+                <a href="{{ url_for('project_uptime', project_id=project.id) }}" class="tab">Uptime</a>
                 <a href="{{ url_for('project_settings', project_id=project.id) }}" class="tab">Settings</a>
             </div>
 
