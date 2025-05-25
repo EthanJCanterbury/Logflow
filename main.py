@@ -506,6 +506,33 @@ def reset_project_data(project_id):
     
     return redirect(url_for('project_settings', project_id=project.id))
 
+@app.route('/projects/<int:project_id>/delete', methods=['POST'])
+@login_required
+def delete_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Delete all associated data
+        Log.query.filter_by(project_id=project.id).delete()
+        Error.query.filter_by(project_id=project.id).delete()
+        Uptime.query.filter_by(project_id=project.id).delete()
+        
+        # Delete the project
+        db.session.delete(project)
+        db.session.commit()
+        
+        flash('Project deleted successfully')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}')
+    
+    return redirect(url_for('dashboard'))
+
 @app.route('/projects/<int:project_id>/uptime', methods=['GET'])
 @login_required
 def project_uptime(project_id):
