@@ -132,6 +132,7 @@
                                     <th>Name</th>
                                     <th>Endpoint</th>
                                     <th>Status</th>
+                                    <th>Uptime %</th>
                                     <th>Response Time</th>
                                     <th>Last Checked</th>
                                     <th>Check Interval</th>
@@ -154,6 +155,17 @@
                                                 {% endif %}
                                             {% else %}
                                                 <span class="status-badge status-pending">PENDING</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="uptime-percentage">
+                                            {% set uptime_pct = uptime.calculate_uptime_percentage() %}
+                                            {% if uptime_pct is not none %}
+                                                <div class="percentage-container">
+                                                    <div class="percentage-bar" style="width: {{ uptime_pct }}%"></div>
+                                                    <span class="percentage-text">{{ uptime_pct }}%</span>
+                                                </div>
+                                            {% else %}
+                                                <span class="not-available">N/A</span>
                                             {% endif %}
                                         </td>
                                         <td class="uptime-response-time">

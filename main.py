@@ -131,6 +131,37 @@ class Uptime(db.Model):
     
     def __repr__(self):
         return f'<Uptime {self.name}: {self.endpoint_url}>'
+        
+    def calculate_uptime_percentage(self):
+        """Calculate the uptime percentage based on logs in the last 30 days"""
+        from sqlalchemy import and_
+        
+        # If never checked, return 'N/A'
+        if not self.last_checked:
+            return None
+            
+        thirty_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+        
+        # Get all logs related to this uptime monitor in the last 30 days
+        logs = Log.query.filter(
+            and_(
+                Log.source == "uptime-monitor",
+                Log.project_id == self.project_id,
+                Log.timestamp >= thirty_days_ago,
+                Log.message.like(f"%{self.name}%")
+            )
+        ).all()
+        
+        # Count successful and failed checks
+        total_checks = len(logs)
+        if total_checks == 0:
+            return None
+            
+        successful_checks = sum(1 for log in logs if "UP" in log.message)
+        
+        # Calculate percentage
+        uptime_percentage = (successful_checks / total_checks) * 100
+        return round(uptime_percentage, 2)
 
 # Authentication
 def login_required(f):
@@ -488,6 +519,8 @@ def project_uptime(project_id):
     # Get uptime monitors with pagination
     page = request.args.get('page', 1, type=int)
     uptimes = Uptime.query.filter_by(project_id=project.id).paginate(page=page, per_page=10)
+    
+    # No need to pre-calculate percentages as the method will be called from the template
     
     return render_template('project_uptime.html', project=project, uptimes=uptimes)
 
