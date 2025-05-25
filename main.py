@@ -14,17 +14,15 @@ from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
-# Set database URL with proper SSL mode
+# Set database URL
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///logflow.db')
 if database_url.startswith('postgresql'):
-    # Check if URL already has sslmode parameter
-    if 'sslmode=' not in database_url:
-        # Add SSL parameters to PostgreSQL connection
-        if '?' not in database_url:
-            database_url += '?'
-        else:
-            database_url += '&'
-        database_url += 'sslmode=require&connect_timeout=10'
+    # Add connection timeout parameter
+    if '?' not in database_url:
+        database_url += '?'
+    else:
+        database_url += '&'
+    database_url += 'sslmode=prefer&connect_timeout=10'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
