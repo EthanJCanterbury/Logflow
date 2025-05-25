@@ -17,12 +17,16 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 # Set database URL
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///logflow.db')
 if database_url.startswith('postgresql'):
-    # Add connection timeout parameter
+    # Add connection timeout parameter with single sslmode setting
     if '?' not in database_url:
         database_url += '?'
     else:
         database_url += '&'
     database_url += 'sslmode=prefer&connect_timeout=10'
+    
+    # Ensure we don't have conflicting sslmode parameters
+    if "sslmode=require" in database_url and "sslmode=prefer" in database_url:
+        database_url = database_url.replace("sslmode=require", "")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
