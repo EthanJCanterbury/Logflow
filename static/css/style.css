@@ -1143,7 +1143,7 @@ a:hover {
     top: 0;
     left: 0;
     height: 100%;
-    background: linear-gradient(to right, #ff8c37, #33d6a6);
+    background-color: #33d6a6;
     border-radius: 10px;
     transition: width 0.5s ease;
 }
