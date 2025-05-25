@@ -401,6 +401,28 @@ def resolve_error(project_id, error_id):
     flash('Error marked as resolved')
     return redirect(url_for('error_details', project_id=project_id, error_id=error_id))
 
+@app.route('/projects/<int:project_id>/errors/resolve-all', methods=['POST'])
+@login_required
+def resolve_all_errors(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    # Get all unresolved errors and mark them as resolved
+    unresolved_errors = Error.query.filter_by(project_id=project.id, resolved=False).all()
+    count = len(unresolved_errors)
+    
+    for error in unresolved_errors:
+        error.resolved = True
+    
+    db.session.commit()
+    
+    flash(f'{count} errors marked as resolved')
+    return redirect(url_for('project_errors', project_id=project_id))
+
 @app.route('/projects/<int:project_id>/settings', methods=['GET', 'POST'])
 @login_required
 def project_settings(project_id):

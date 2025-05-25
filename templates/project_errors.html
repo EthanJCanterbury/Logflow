@@ -156,6 +156,13 @@
                                 <!-- Types will be populated via JavaScript -->
                             </select>
                             <input type="text" class="filter-input" id="search-filter" placeholder="Search errors...">
+                            {% if errors.items and request.args.get('resolved') != 'true' %}
+                            <form method="POST" action="{{ url_for('resolve_all_errors', project_id=project.id) }}" class="inline-form">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-check-circle"></i> Mark All as Resolved
+                                </button>
+                            </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
