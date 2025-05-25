@@ -476,6 +476,95 @@ def new_uptime(project_id):
     
     return render_template('new_uptime.html', project=project)
 
+@app.route('/projects/<int:project_id>/uptime/<int:uptime_id>/ping', methods=['POST'])
+@login_required
+def ping_uptime(project_id, uptime_id):
+    project = Project.query.get_or_404(project_id)
+    uptime = Uptime.query.get_or_404(uptime_id)
+    
+    # Ensure the user owns this project and the uptime belongs to the project
+    if project.user_id != session['user_id'] or uptime.project_id != project.id:
+        flash('You do not have access to this resource')
+        return redirect(url_for('dashboard'))
+    
+    # Manually check this uptime monitor
+    try:
+        import requests
+        from datetime import datetime
+        
+        # Make request to endpoint and measure response time
+        start_time = datetime.utcnow()
+        response = requests.get(uptime.endpoint_url, timeout=10)
+        end_time = datetime.utcnow()
+        
+        # Calculate response time in milliseconds
+        response_time = (end_time - start_time).total_seconds() * 1000
+        
+        # Update monitor status
+        uptime.last_checked = datetime.utcnow()
+        uptime.last_status = response.status_code < 400
+        uptime.response_time = response_time
+        
+        # Create a log entry for this check
+        status_text = "UP" if uptime.last_status else "DOWN"
+        log = Log(
+            message=f"Manual uptime check: {uptime.name} is {status_text} (HTTP {response.status_code}, {response_time:.2f}ms)",
+            level="INFO" if uptime.last_status else "ERROR",
+            source="uptime-monitor",
+            project_id=project.id
+        )
+        db.session.add(log)
+        
+        # If down, create an error
+        if not uptime.last_status:
+            error = Error(
+                message=f"Endpoint {uptime.name} is DOWN",
+                type="UptimeError",
+                source="uptime-monitor",
+                meta_data=json.dumps({
+                    "endpoint": uptime.endpoint_url,
+                    "status_code": response.status_code,
+                    "response_time": response_time
+                }),
+                project_id=project.id
+            )
+            db.session.add(error)
+        
+        db.session.commit()
+        flash(f'Monitor pinged successfully. Status: {status_text}')
+    except Exception as e:
+        # Handle connection errors
+        uptime.last_checked = datetime.utcnow()
+        uptime.last_status = False
+        uptime.response_time = None
+        
+        # Log the error
+        log = Log(
+            message=f"Manual uptime check failed: {uptime.name} - {str(e)}",
+            level="ERROR",
+            source="uptime-monitor",
+            project_id=project.id
+        )
+        db.session.add(log)
+        
+        # Create an error
+        error = Error(
+            message=f"Failed to check endpoint {uptime.name}",
+            type="UptimeConnectionError",
+            source="uptime-monitor",
+            meta_data=json.dumps({
+                "endpoint": uptime.endpoint_url,
+                "error": str(e)
+            }),
+            project_id=project.id
+        )
+        db.session.add(error)
+        
+        db.session.commit()
+        flash(f'Monitor ping failed: {str(e)}')
+    
+    return redirect(url_for('project_uptime', project_id=project_id))
+
 @app.route('/projects/<int:project_id>/uptime/<int:uptime_id>/delete', methods=['POST'])
 @login_required
 def delete_uptime(project_id, uptime_id):

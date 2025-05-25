@@ -1059,11 +1059,14 @@ a:hover {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--spacing-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
 .uptime-table th,
 .uptime-table td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
     text-align: left;
     border-bottom: 1px solid var(--light-gray);
 }
@@ -1072,6 +1075,7 @@ a:hover {
     font-weight: 600;
     color: var(--dark);
     background-color: var(--light);
+    white-space: nowrap;
 }
 
 .status-badge {
@@ -1100,6 +1104,13 @@ a:hover {
 
 .inline-form {
     display: inline;
+    margin-right: 5px;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .uptime-name {
