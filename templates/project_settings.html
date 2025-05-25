@@ -270,12 +270,22 @@
         deleteConfirmInput.addEventListener('input', function() {
             deleteConfirmBtn.disabled = this.value !== "{{ project.name }}";
         });
+        
+        // Add event listener for delete confirmation
+        deleteConfirmBtn.addEventListener('click', function() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("delete_project", project_id=project.id) }}';
+            document.body.appendChild(form);
+            form.submit();
+        });
 
         // Regenerate key modal
         const regenerateModal = document.getElementById('regenerate-modal');
         const regenerateBtn = document.getElementById('regenerate-key-btn');
         const regenerateCloseBtn = document.querySelector('#regenerate-modal .modal-close');
         const regenerateCancelBtn = document.getElementById('regenerate-cancel');
+        const regenerateConfirmBtn = document.getElementById('regenerate-confirm');
 
         regenerateBtn.addEventListener('click', function() {
             regenerateModal.classList.add('show');
@@ -287,6 +297,15 @@
 
         regenerateCancelBtn.addEventListener('click', function() {
             regenerateModal.classList.remove('show');
+        });
+        
+        // Add event listener for regenerate key confirmation
+        regenerateConfirmBtn.addEventListener('click', function() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("regenerate_api_key", project_id=project.id) }}';
+            document.body.appendChild(form);
+            form.submit();
         });
         
         // Reset Data modal
