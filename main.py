@@ -506,6 +506,29 @@ def reset_project_data(project_id):
     
     return redirect(url_for('project_settings', project_id=project.id))
 
+@app.route('/projects/<int:project_id>/regenerate-key', methods=['POST'])
+@login_required
+def regenerate_api_key(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Generate a new unique API key
+        new_api_key = str(uuid.uuid4()).replace('-', '')
+        project.api_key = new_api_key
+        db.session.commit()
+        
+        flash('API key regenerated successfully')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}')
+    
+    return redirect(url_for('project_settings', project_id=project.id))
+
 @app.route('/projects/<int:project_id>/delete', methods=['POST'])
 @login_required
 def delete_project(project_id):
