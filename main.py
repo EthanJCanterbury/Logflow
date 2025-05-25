@@ -865,15 +865,18 @@ def check_uptime():
                     uptime.last_status = response.status_code < 400
                     uptime.response_time = response_time
                     
-                    # Create a log entry for this check
+                    # Only create a log entry if the service is DOWN
                     status_text = "UP" if uptime.last_status else "DOWN"
-                    log = Log(
-                        message=f"Uptime check: {uptime.name} is {status_text} (HTTP {response.status_code}, {response_time:.2f}ms)",
-                        level="INFO" if uptime.last_status else "ERROR",
-                        source="uptime-monitor",
-                        project_id=uptime.project_id
-                    )
-                    db.session.add(log)
+                    
+                    # Only log if service is down to prevent excessive logging
+                    if not uptime.last_status:
+                        log = Log(
+                            message=f"Uptime check: {uptime.name} is DOWN (HTTP {response.status_code}, {response_time:.2f}ms)",
+                            level="ERROR",
+                            source="uptime-monitor",
+                            project_id=uptime.project_id
+                        )
+                        db.session.add(log)
                     
                     # If down, create an error
                     if not uptime.last_status:
