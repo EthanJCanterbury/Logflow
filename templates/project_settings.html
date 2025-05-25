@@ -125,7 +125,7 @@
 
                          <div class="form-group">
                             <label>Storage Usage</label>
-                            <div>Current usage: TBD / 500MB</div>
+                            <div>Current usage: {{ "%.2f"|format(project.storage_size_mb) }} / 500MB</div>
                         </div>
 
                         <div class="form-group">
@@ -164,6 +164,14 @@
                         <button type="button" class="btn btn-outline-danger" id="regenerate-key-btn">Regenerate Key</button>
                     </div>
 
+                    <div class="danger-action">
+                        <div class="danger-info">
+                            <h4>Reset Logs & Errors</h4>
+                            <p>This will delete all logs and errors for this project, freeing up storage space. This action cannot be undone.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger" id="reset-data-btn">Reset Data</button>
+                    </div>
+                    
                     <div class="danger-action">
                         <div class="danger-info">
                             <h4>Delete Project</h4>
@@ -207,6 +215,23 @@
                 <div class="modal-actions">
                     <button class="btn btn-outline" id="regenerate-cancel">Cancel</button>
                     <button class="btn btn-primary" id="regenerate-confirm">Regenerate Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reset Data Confirmation Modal -->
+    <div class="modal" id="reset-data-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reset Logs & Errors</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete all logs and errors for this project? This will free up storage space but cannot be undone.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" id="reset-data-cancel">Cancel</button>
+                    <button class="btn btn-danger" id="reset-data-confirm">Reset Data</button>
                 </div>
             </div>
         </div>
@@ -262,6 +287,34 @@
 
         regenerateCancelBtn.addEventListener('click', function() {
             regenerateModal.classList.remove('show');
+        });
+        
+        // Reset Data modal
+        const resetDataModal = document.getElementById('reset-data-modal');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+        const resetDataCloseBtn = document.querySelector('#reset-data-modal .modal-close');
+        const resetDataCancelBtn = document.getElementById('reset-data-cancel');
+        const resetDataConfirmBtn = document.getElementById('reset-data-confirm');
+
+        resetDataBtn.addEventListener('click', function() {
+            resetDataModal.classList.add('show');
+        });
+
+        resetDataCloseBtn.addEventListener('click', function() {
+            resetDataModal.classList.remove('show');
+        });
+
+        resetDataCancelBtn.addEventListener('click', function() {
+            resetDataModal.classList.remove('show');
+        });
+        
+        resetDataConfirmBtn.addEventListener('click', function() {
+            // Submit form to reset data endpoint
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("reset_project_data", project_id=project.id) }}';
+            document.body.appendChild(form);
+            form.submit();
         });
     </script>
 </body>

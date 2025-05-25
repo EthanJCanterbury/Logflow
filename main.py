@@ -423,6 +423,32 @@ def project_settings(project_id):
     
     return render_template('project_settings.html', project=project)
 
+@app.route('/projects/<int:project_id>/reset-data', methods=['POST'])
+@login_required
+def reset_project_data(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Ensure the user owns this project
+    if project.user_id != session['user_id']:
+        flash('You do not have access to this project')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Delete all logs and errors for this project
+        Log.query.filter_by(project_id=project.id).delete()
+        Error.query.filter_by(project_id=project.id).delete()
+        
+        # Reset storage size
+        project.storage_size = 0
+        db.session.commit()
+        
+        flash('All logs and errors have been deleted successfully!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}')
+    
+    return redirect(url_for('project_settings', project_id=project.id))
+
 @app.route('/projects/<int:project_id>/uptime', methods=['GET'])
 @login_required
 def project_uptime(project_id):
