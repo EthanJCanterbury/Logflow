@@ -1055,6 +1055,10 @@ a:hover {
 }
 
 /* Uptime Monitoring Styles */
+.uptime-container {
+    padding: 0 var(--spacing-md);
+}
+
 .uptime-table {
     width: 100%;
     border-collapse: collapse;
@@ -1062,11 +1066,12 @@ a:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-radius: var(--radius-md);
     overflow: hidden;
+    background-color: var(--white);
 }
 
 .uptime-table th,
 .uptime-table td {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md);
     text-align: left;
     border-bottom: 1px solid var(--light-gray);
 }
@@ -1076,15 +1081,23 @@ a:hover {
     color: var(--dark);
     background-color: var(--light);
     white-space: nowrap;
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+}
+
+.uptime-table tr:hover {
+    background-color: var(--light);
 }
 
 .status-badge {
     display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-pill);
     font-size: var(--font-size-xs);
     font-weight: 600;
     text-transform: uppercase;
+    text-align: center;
+    min-width: 60px;
 }
 
 .status-up {
@@ -1111,6 +1124,16 @@ a:hover {
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
 }
 
 .uptime-name {
@@ -1832,8 +1855,11 @@ a:hover {
 }
 
 /* Forms */
-.form {
+.form,
+.settings-form {
     padding: var(--spacing-lg);
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .form-group {
@@ -1843,17 +1869,34 @@ a:hover {
 .form-group label {
     display: block;
     margin-bottom: var(--spacing-xs);
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--dark);
+    font-size: var(--font-size-md);
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md);
     border: 1px solid var(--gray);
     border-radius: var(--radius-md);
     font-size: var(--font-size-md);
+    background-color: var(--white);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(236, 55, 80, 0.15);
+}
+
+.form-text {
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--muted);
 }
 
 .form-group input:focus,
