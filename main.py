@@ -39,8 +39,9 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)
 
-# Security settings
-app.config['SESSION_COOKIE_SECURE'] = True
+# Security settings - only secure cookies in production with HTTPS
+is_production = os.environ.get('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = is_production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)
 
@@ -192,6 +193,10 @@ def api_key_required(f):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy', 'timestamp': datetime.datetime.utcnow().isoformat()}), 200
 
 @app.route('/documentation')
 def documentation():
@@ -1068,6 +1073,7 @@ if os.environ.get('FLASK_ENV') == 'production':
     uptime_thread = threading.Thread(target=uptime_checker_thread, daemon=True)
     uptime_thread.start()
 
+# This block is only for local development
 if __name__ == '__main__':
     # Use debug mode only in development
     debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'

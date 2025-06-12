@@ -17,5 +17,5 @@ ENV FLASK_ENV=production
 # Expose port
 EXPOSE 5000
 
-# Run the application
-CMD ["python", "main.py"]
+# Run the application with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "main:app"]
