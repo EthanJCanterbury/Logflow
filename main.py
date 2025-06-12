@@ -4,6 +4,7 @@ import uuid
 import json
 import random
 import datetime
+import requests
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, g
 from flask_sqlalchemy import SQLAlchemy
